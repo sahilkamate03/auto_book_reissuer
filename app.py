@@ -1,4 +1,5 @@
 import mechanicalsoup
+import sqlite3
 
 from flask import Flask, render_template,redirect, url_for, flash
 
@@ -8,7 +9,7 @@ from wtforms.validators import DataRequired, Email, NumberRange
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '7253b6bb628eaea304a5dc18c17c4cc003b822835f1963ad'
-
+DATABASE = "./db/site.db"
 class RegistrationForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     email = StringField('Email address', validators=[DataRequired(), Email()])
@@ -16,6 +17,18 @@ class RegistrationForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     send_notifications = BooleanField('Send Email Notifications')
     submit = SubmitField('Register / Update')
+
+def create_table():
+    connection = sqlite3.connect(DATABASE)
+    with open('./db/schema.sql') as f:
+        connection.executescript(f.read())
+
+def add_to_database(name, email, user_id, password, send_notifications):
+    connection = sqlite3.connect(DATABASE)
+    cursor = connection.cursor()
+    cursor.execute("INSERT INTO users (name, email, user_id, password, send_notifications) VALUES (?, ?, ?, ?, ?)", (name, email, user_id, password, send_notifications))
+    connection.commit()
+    connection.close()
 
 def verify_date(user_id, password):
     browser = mechanicalsoup.StatefulBrowser()
@@ -45,12 +58,26 @@ def register():
         user_id = form.user_id.data
         password = form.password.data
         send_notifications = form.send_notifications.data
-        isDataValid =verify_date(user_id, password)
-        if (isDataValid == False):
-            flash('Invalid User Id or Password.', 'danger')
-            return redirect(url_for('register', form=form))
+        # isDataValid =verify_date(user_id, password)
+        # if (isDataValid == False):
+        #     flash('Invalid User Id or Password.', 'danger')
+        #     return redirect(url_for('register', form=form))
         print(f"Received data: {name}, {email}, {user_id}, {password}, {send_notifications}")
+        add_to_database(name, email, user_id, password, send_notifications)
         flash('Credentials Saved. Book will be reissued automatically.', 'success')
         return redirect(url_for('register', form=form))
 
     return render_template('index.html', form=form)
+
+@app.route('/view')
+def view():
+    connection = sqlite3.connect(DATABASE)
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM users")
+    users = cursor.fetchall()
+    connection.close()
+    return render_template('view.html', users=users)
+
+if __name__ == "__main__":
+    create_table()
+    app.run(debug=True)
