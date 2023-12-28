@@ -1,8 +1,8 @@
 import os
 import smtplib
 import sqlite3
+import time
 
-import base64
 from cryptography.fernet import Fernet
 import mechanicalsoup
 import requests
@@ -43,7 +43,8 @@ def create_table():
 def add_to_database(name, email, user_id, password, send_notifications, user_ip):
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
-
+    already_exists = False
+    isDataUpdated = True
     try:
         cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
         existing_user = cursor.fetchone()
@@ -54,21 +55,59 @@ def add_to_database(name, email, user_id, password, send_notifications, user_ip)
                 UPDATE users SET name=?, email=?, password=?, send_notifications=?
                 WHERE id=?
             """, (name, email, password, send_notifications, existing_user[0]))
-            # send_mail(old_mail, "Alert: User Details Updated", f"Your user details have been updated. \n\nName: {name}\nEmail: {email}\nUser Id: {user_id}\nPassword: {password}\nSend Notifications: {send_notifications}\nDetails are updated by IP Address {user_ip} at {get_geolocation(user_ip)} \n\nRegards,\nLibrary Reissue Bot")
+            already_exists = True
 
         else:
             cursor.execute("INSERT INTO users (name, email, user_id, password, send_notifications) VALUES (?, ?, ?, ?, ?)", (name, email, user_id, password, send_notifications))
 
         connection.commit()
-
-        
         print("User added/updated successfully")
 
     except sqlite3.Error as e:
-        print("Error:", e)
+        isDataUpdated = False
         connection.rollback()
     finally:
         connection.close()
+        print(isDataUpdated, " ", already_exists) 
+        if (isDataUpdated and already_exists == False):
+            msg_subject = "New User Registered"
+            msg_body =  f"""
+            Hi {name},
+
+            Your details have been successfully registered! Here's a summary:
+
+            - Name: {name}
+            - Email: {email}
+            - User ID: {user_id}
+            - Send Notifications: {send_notifications}
+
+            To update your details in the future, please fill out the registration form again.
+
+            If you have any questions or concerns, feel free to contact us.
+
+            Regards,
+            Library Reissue Bot
+            """
+            send_mail(email, msg_subject, msg_body)
+
+        elif (isDataUpdated and already_exists == True and old_mail != email):
+            msg_subject = "User Details Updated"
+            msg_body =  f"""
+            Hi {name},
+
+            Your details have been successfully updated! Here's a summary:
+
+            - Name: {name}
+            - Email: {email}
+            - User ID: {user_id}
+            - Send Notifications: {send_notifications}
+
+            If you have any questions or concerns, feel free to contact us.
+
+            Regards,
+            Library Reissue Bot
+            """
+            # send_mail(email, msg_subject, msg_body)
 
 def send_mail(email,subject, body):
     sender = os.getenv('EMAIL')
@@ -105,7 +144,7 @@ def get_geolocation(ip_address):
     else:
         return None, None, None
 
-def verify_date(user_id, password):
+def verify_data(user_id, password):
     browser = mechanicalsoup.StatefulBrowser()
     url = "http://14.139.108.229/W27/login.aspx"
     browser.open(url)
@@ -125,8 +164,11 @@ def verify_date(user_id, password):
 @app.route('/register', methods=['GET','POST'])
 @limiter.limit("500 per day")
 def register():
+    
+    time.sleep(5)
     user_ip = request.remote_addr
     form = RegistrationForm()
+    return redirect(url_for('home', form=form))
     if form.validate_on_submit():
         name = form.name.data
         email = form.email.data
@@ -141,7 +183,7 @@ def register():
         # print(f"Received data: {name}, {email}, {user_id}, {password}, {send_notifications}")
         add_to_database(name, email, user_id, encrypted_password, send_notifications, user_ip)
         flash('Credentials Saved. Book will be reissued automatically.', 'success')
-    return redirect(url_for('register', form=form))
+    return redirect(url_for('home', form=form))
 
 @app.route('/')
 def home():
