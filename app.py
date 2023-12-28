@@ -1,6 +1,5 @@
 import os
 import sqlite3
-import time
 
 from models import RegistrationForm
 from services.database import add_to_database, create_table, DATABASE
@@ -12,18 +11,17 @@ from flask import Flask, flash, redirect, render_template, request, url_for
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-
 load_dotenv()  
 fernet = Fernet(os.getenv("FERNET_KEY"))
 
 app = Flask(__name__)
+
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"]
+    default_limits=[os.getenv('DEFAULT_PER_DAY_LIMIT'), os.getenv('DEFAULT_PER_HOUR_LIMIT')]
 )
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
-
 
 def verify_data(user_id, password):
     browser = mechanicalsoup.StatefulBrowser()
@@ -54,11 +52,10 @@ def register():
         password = form.password.data
         encrypted_password = fernet.encrypt(password.encode())
         send_notifications = form.send_notifications.data
-        # isDataValid =verify_date(user_id, password)
-        # if (isDataValid == False):
-        #     flash('Invalid User Id or Password.', 'danger')
-        #     return redirect(url_for('register', form=form))
-        # print(f"Received data: {name}, {email}, {user_id}, {password}, {send_notifications}")
+        isDataValid =verify_data(user_id, password)
+        if (isDataValid == False):
+            flash('Invalid User Id or Password.', 'danger')
+            return redirect(url_for('register', form=form))
         add_to_database(name, email, user_id, encrypted_password, send_notifications, user_ip)
         flash('Credentials Saved. Book will be reissued automatically.', 'success')
     return redirect(url_for('home', form=form))
@@ -69,7 +66,7 @@ def home():
     return render_template('index.html', form=form)
 
 @app.route('/view')
-@limiter.limit("100 per minute")
+@limiter.limit(os.getenv("FORM_SUBMIT_RATE_LIMIT"))
 def view():
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()

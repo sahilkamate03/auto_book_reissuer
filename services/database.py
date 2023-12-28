@@ -1,8 +1,9 @@
 import sqlite3
-import os
+from datetime import datetime
 from services.mail import send_mail
+from services.get_geolocation import get_geolocation
 
-DATABASE = "./db/site.db"
+DATABASE = './db/database.db'
 
 def create_table():
     connection = sqlite3.connect(DATABASE)
@@ -59,7 +60,7 @@ def add_to_database(name, email, user_id, password, send_notifications, user_ip)
             """
             send_mail(email, msg_subject, msg_body)
 
-        elif (isDataUpdated and already_exists == True and old_mail != email):
+        elif (isDataUpdated and already_exists == True ):
             msg_subject = "User Details Updated"
             msg_body =  f"""
             Hi {name},
@@ -71,9 +72,10 @@ def add_to_database(name, email, user_id, password, send_notifications, user_ip)
             - User ID: {user_id}
             - Send Notifications: {send_notifications}
 
+            The details were updated by IP: {user_ip} at {datetime.now()} {get_geolocation(user_ip)}.
             If you have any questions or concerns, feel free to contact us.
 
             Regards,
             Library Reissue Bot
             """
-            # send_mail(email, msg_subject, msg_body)
+            send_mail(email, msg_subject, msg_body)

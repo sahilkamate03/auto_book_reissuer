@@ -232,3 +232,6 @@ GitHub.sublime-settings
 .ionide
 
 db/site.db
+db/database.db
+.vscode/settings.json
+.vscode/tasks.json

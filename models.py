@@ -2,7 +2,6 @@ from flask_wtf import FlaskForm
 from wtforms import BooleanField, IntegerField, PasswordField, StringField, SubmitField
 from wtforms.validators import DataRequired, Email, NumberRange
 
-
 class RegistrationForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     email = StringField('Email address', validators=[DataRequired(), Email()])
