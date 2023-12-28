@@ -4,17 +4,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto Reissuer</title>
+    <title>Auto Book Reissuer</title>
 </head>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+<link rel="icon" href="../static/books.png" type="image/x-icon">
 
 <body style="background-color: #ebeced;">
     <!-- As a link -->
     <nav class="navbar bg-body-tertiary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">Navbar</a>
+            <a class="navbar-brand" href="#">
+                <img src="../static/books.png" alt="Bootstrap" width="30" height="24">
+                Auto Book Reissuer
+            </a>
+            <a href="https://github.com/sahilkamate03/auto_book_reissuer">
+                <button class="btn btn-primary">
+                    <i class="fab fa-github"></i>
+                    Source Code
+                </button>
+            </a>
         </div>
     </nav>
 
@@ -33,10 +43,12 @@
                             The project aims to automate the book Reissue process for the students of the AIT.
                             Simply enter the credentials of this <a href="http://14.139.108.229/w27/">site.</a> The
                             credetials will be
-                            verified and the books will be reissued automatically. You can enable email Notifications to
+                            verified and the books will be reissued automatically. You can enable/disable email
+                            Notifications to
                             recieve updates
                             regarding book reissue.
                         </p>
+                        <p>Note: In order to update your information, kindly fill the form once more.</p>
                     </div>
 
                     <div class="col-lg-6 mb-5 mb-lg-0">
@@ -85,7 +97,8 @@
 
                                     <!-- Checkbox -->
                                     <div class="form-check d-flex justify-content-center mb-4">
-                                        {{ form.send_notifications(class="orm-check-input me-2",type="checkbox") }}
+                                        {{ form.send_notifications(class="form-check-input me-2", type="checkbox",
+                                        checked=True) }}
                                         {{ form.send_notifications.label(class="form-check-label") }}
                                     </div>
 

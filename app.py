@@ -1,22 +1,23 @@
-import mechanicalsoup
-import sqlite3
 import os
-from dotenv import load_dotenv
-import requests
+import smtplib
+import sqlite3
 
-from flask import Flask, render_template,redirect, url_for, flash, request
+import base64
+from cryptography.fernet import Fernet
+import mechanicalsoup
+import requests
+from dotenv import load_dotenv
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from flask import Flask, flash, redirect, render_template, request, url_for
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, IntegerField, SubmitField
+from wtforms import BooleanField, IntegerField, PasswordField, StringField, SubmitField
 from wtforms.validators import DataRequired, Email, NumberRange
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
 load_dotenv()  
+fernet = Fernet(os.getenv("FERNET_KEY"))
 
 app = Flask(__name__)
 limiter = Limiter(
@@ -24,7 +25,7 @@ limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["200 per day", "50 per hour"]
 )
-app.config['SECRET_KEY'] = '7253b6bb628eaea304a5dc18c17c4cc003b822835f1963ad'
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 DATABASE = "./db/site.db"
 class RegistrationForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
@@ -131,13 +132,14 @@ def register():
         email = form.email.data
         user_id = form.user_id.data
         password = form.password.data
+        encrypted_password = fernet.encrypt(password.encode())
         send_notifications = form.send_notifications.data
         # isDataValid =verify_date(user_id, password)
         # if (isDataValid == False):
         #     flash('Invalid User Id or Password.', 'danger')
         #     return redirect(url_for('register', form=form))
         # print(f"Received data: {name}, {email}, {user_id}, {password}, {send_notifications}")
-        add_to_database(name, email, user_id, password, send_notifications, user_ip)
+        add_to_database(name, email, user_id, encrypted_password, send_notifications, user_ip)
         flash('Credentials Saved. Book will be reissued automatically.', 'success')
     return redirect(url_for('register', form=form))
 
