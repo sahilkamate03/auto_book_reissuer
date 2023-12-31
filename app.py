@@ -71,6 +71,3 @@ def home():
 def view():
     users_data = get_all_users()
     return render_template('view.html', users=users_data)
-
-if __name__ == "__main__":
-    app.run()
