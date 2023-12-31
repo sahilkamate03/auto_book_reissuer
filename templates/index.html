@@ -65,7 +65,7 @@
                                 {% endif %}
                                 {% endwith %}
                                 <form method="post" action="/register" class="register-form">
-                                    {{ form.hidden_tag() }}
+                                    {{ form.csrf_token }}
 
                                     <!-- 2 column grid layout with text inputs for the first and last names -->
 

@@ -8,6 +8,7 @@ from cryptography.fernet import Fernet
 import mechanicalsoup
 from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, url_for
+from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -15,14 +16,13 @@ load_dotenv()
 fernet = Fernet(os.getenv("FERNET_KEY"))
 
 app = Flask(__name__)
-
+csrf = CSRFProtect(app)
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
     default_limits=[os.getenv('DEFAULT_PER_DAY_LIMIT'), os.getenv('DEFAULT_PER_HOUR_LIMIT')]
 )
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
-
 create_table()
 
 def verify_data(user_id, password):
