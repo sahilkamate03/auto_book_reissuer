@@ -1,43 +1,68 @@
+import os
+import urllib.parse as up
 import sqlite3
 from datetime import datetime
 from services.mail import send_mail
 from services.get_geolocation import get_geolocation
+import psycopg2
 
-DATABASE = './db/database.db'
+def get_db_connection():
+    up.uses_netloc.append("postgres")
+    url = up.urlparse(os.environ["DATABASE_URL"])
+    conn = psycopg2.connect(database=url.path[1:],
+    user=url.username,
+    password=url.password,
+    host=url.hostname,
+    port=url.port
+    )
+    return conn
 
 def create_table():
-    connection = sqlite3.connect(DATABASE)
-    with open('./db/schema.sql') as f:
-        connection.executescript(f.read())
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS  users (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    send_notifications BOOLEAN NOT NULL DEFAULT false
+    )
+    """)
+
+    conn.commit()
+    cur.close()
+    conn.close()
 
 def add_to_database(name, email, user_id, password, send_notifications, user_ip):
-    connection = sqlite3.connect(DATABASE)
-    cursor = connection.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
     already_exists = False
     isDataUpdated = True
     try:
-        cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
+        cursor.execute("SELECT * FROM users WHERE user_id=%s", (user_id,))
         existing_user = cursor.fetchone()
 
         if existing_user:
             old_mail =existing_user[2]
             cursor.execute("""
-                UPDATE users SET name=?, email=?, password=?, send_notifications=?
-                WHERE id=?
+                UPDATE users SET name=%s, email=%s, password=%s, send_notifications=%s
+                WHERE id=%s
             """, (name, email, password, send_notifications, existing_user[0]))
             already_exists = True
 
         else:
-            cursor.execute("INSERT INTO users (name, email, user_id, password, send_notifications) VALUES (?, ?, ?, ?, ?)", (name, email, user_id, password, send_notifications))
+            cursor.execute("INSERT INTO users (name, email, user_id, password, send_notifications) VALUES (%s, %s, %s, %s, %s)", (name, email, user_id, password, send_notifications))
 
-        connection.commit()
+        conn.commit()
         print("User added/updated successfully")
 
     except sqlite3.Error as e:
         isDataUpdated = False
-        connection.rollback()
+        conn.rollback()
     finally:
-        connection.close()
+        conn.close()
         print(isDataUpdated, " ", already_exists) 
         if (isDataUpdated and already_exists == False):
             msg_subject = "New User Registered"
@@ -79,3 +104,10 @@ def add_to_database(name, email, user_id, password, send_notifications, user_ip)
             Library Reissue Bot
             """
             send_mail(email, msg_subject, msg_body)
+
+def get_all_users():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users")
+    users = cursor.fetchall()
+    return users

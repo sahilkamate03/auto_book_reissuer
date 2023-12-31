@@ -1,8 +1,7 @@
 import os
-import sqlite3
 
 from models import RegistrationForm
-from services.database import add_to_database, create_table, DATABASE
+from services.database import add_to_database, create_table, get_all_users
 
 from cryptography.fernet import Fernet
 import mechanicalsoup
@@ -70,12 +69,8 @@ def home():
 @app.route('/view')
 @limiter.limit(os.getenv("FORM_SUBMIT_RATE_LIMIT"))
 def view():
-    connection = sqlite3.connect(DATABASE)
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM users")
-    users = cursor.fetchall()
-    connection.close()
-    return render_template('view.html', users=users)
+    users_data = get_all_users()
+    return render_template('view.html', users=users_data)
 
 if __name__ == "__main__":
     app.run()
