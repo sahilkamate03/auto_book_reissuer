@@ -23,6 +23,8 @@ limiter = Limiter(
 )
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 
+create_table()
+
 def verify_data(user_id, password):
     browser = mechanicalsoup.StatefulBrowser()
     url = "http://14.139.108.229/W27/login.aspx"
@@ -76,5 +78,4 @@ def view():
     return render_template('view.html', users=users)
 
 if __name__ == "__main__":
-    create_table()
     app.run()
