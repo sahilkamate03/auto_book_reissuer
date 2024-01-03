@@ -6,3 +6,7 @@ document.querySelector('form').addEventListener('submit', function () {
     </button>
     `;
 });
+
+function reloadPage() {
+    location.reload(true); // Pass true to force a reload from the server
+}
