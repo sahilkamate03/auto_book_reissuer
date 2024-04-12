@@ -60,18 +60,18 @@ def reissue_books(username, password):
         due_date = datetime.datetime.strptime(due_date_str.strip(), "%d-%b-%Y").date()
 
         if due_date <= indian_current_date:
-            # browser.select_form('form[action="./w27MyInfo.aspx"]')
-            # browser.submit_selected(btnName=reissue_btn)
+            browser.select_form('form[action="./w27MyInfo.aspx"]')
+            browser.submit_selected(btnName=reissue_btn)
             print("Book Reissued: ", data_row[1])
 
     current_utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     ist_timezone = pytz.timezone("Asia/Kolkata")
     current_date = current_utc_datetime.astimezone(ist_timezone).strftime("%Y-%m-%d")
-    with open("status.txt", "w") as file:
-        file.write(current_date)
+    # with open("status.txt", "w") as file:
+    #     file.write(current_date)
 
-    with open("log.txt", "a") as file:
-        file.write(str(datetime.datetime.now()) + "\n")
+    # with open("log.txt", "a") as file:
+    #     file.write(str(datetime.datetime.now()) + "\n")
 
 
 def fetch_data_from_database():
