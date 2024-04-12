@@ -6,21 +6,25 @@ from services.mail import send_mail
 from services.get_geolocation import get_geolocation
 import psycopg2
 
+
 def get_db_connection():
     up.uses_netloc.append("postgres")
     url = up.urlparse(os.environ["DATABASE_URL"])
-    conn = psycopg2.connect(database=url.path[1:],
-    user=url.username,
-    password=url.password,
-    host=url.hostname,
-    port=url.port
+    conn = psycopg2.connect(
+        database=url.path[1:],
+        user=url.username,
+        password=url.password,
+        host=url.hostname,
+        port=url.port,
     )
     return conn
+
 
 def create_table():
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(
+        """
     CREATE TABLE IF NOT EXISTS  users (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
@@ -29,11 +33,13 @@ def create_table():
     password TEXT NOT NULL,
     send_notifications BOOLEAN NOT NULL DEFAULT false
     )
-    """)
+    """
+    )
 
     conn.commit()
     cur.close()
     conn.close()
+
 
 def add_to_database(name, email, user_id, password, send_notifications, user_ip):
     conn = get_db_connection()
@@ -45,15 +51,21 @@ def add_to_database(name, email, user_id, password, send_notifications, user_ip)
         existing_user = cursor.fetchone()
 
         if existing_user:
-            old_mail =existing_user[2]
-            cursor.execute("""
+            old_mail = existing_user[2]
+            cursor.execute(
+                """
                 UPDATE users SET name=%s, email=%s, password=%s, send_notifications=%s
                 WHERE id=%s
-            """, (name, email, password, send_notifications, existing_user[0]))
+            """,
+                (name, email, password, send_notifications, existing_user[0]),
+            )
             already_exists = True
 
         else:
-            cursor.execute("INSERT INTO users (name, email, user_id, password, send_notifications) VALUES (%s, %s, %s, %s, %s)", (name, email, user_id, password, send_notifications))
+            cursor.execute(
+                "INSERT INTO users (name, email, user_id, password, send_notifications) VALUES (%s, %s, %s, %s, %s)",
+                (name, email, user_id, password, send_notifications),
+            )
 
         conn.commit()
         print("User added/updated successfully")
@@ -63,10 +75,10 @@ def add_to_database(name, email, user_id, password, send_notifications, user_ip)
         conn.rollback()
     finally:
         conn.close()
-        print(isDataUpdated, " ", already_exists) 
-        if (isDataUpdated and already_exists == False):
+        print(isDataUpdated, " ", already_exists)
+        if isDataUpdated and already_exists == False:
             msg_subject = "New User Registered"
-            msg_body =  f"""
+            msg_body = f"""
             Hi {name},
 
             Your details have been successfully registered! Here's a summary:
@@ -85,9 +97,9 @@ def add_to_database(name, email, user_id, password, send_notifications, user_ip)
             """
             send_mail(email, msg_subject, msg_body)
 
-        elif (isDataUpdated and already_exists == True ):
+        elif isDataUpdated and already_exists == True:
             msg_subject = "User Details Updated"
-            msg_body =  f"""
+            msg_body = f"""
             Hi {name},
 
             Your details have been successfully updated! Here's a summary:
@@ -104,6 +116,7 @@ def add_to_database(name, email, user_id, password, send_notifications, user_ip)
             Library Reissue Bot
             """
             send_mail(email, msg_subject, msg_body)
+
 
 def get_all_users():
     conn = get_db_connection()
